@@ -209,6 +209,7 @@ function updateSun() {
   sun.elev = e; sun.ha = ha;
   sun.night = clamp((-e - 2) / 10, 0, 1);
   sun.day = clamp((e + 2) / 14, 0, 1);
+  sun.moon = moonPhase(d);
   let i = 0; while (i < KEYS.length - 2 && e > KEYS[i + 1][0]) i++;
   const a = KEYS[i], b = KEYS[i + 1], k = clamp((e - a[0]) / (b[0] - a[0]), 0, 1);
   sun.c = [1,2,3,4,5].map(n => a[n].map((v, j) => Math.round(lerp(v, b[n][j], k))));
@@ -466,6 +467,86 @@ function initSky() {
   motes = Array.from({length: mobile ? 26 : 54}, () => ({x: Math.random(), y: Math.random(), r: .6 + Math.random() * 1.4, p: Math.random() * TAU}));
 }
 
+/* ---------- Rencontres rares : une baleine qui vient souffler, un voilier qui passe ---------- */
+const params = new URLSearchParams(location.search);
+const wanted = params.get('rencontre');      // ?rencontre=baleine ou ?rencontre=voilier pour en déclencher une tout de suite
+const BOAT_HULL = new Path2D('M-64-7L74-10Q54 12 22 14L-40 14Q-59 12-64-7Z');
+const BOAT_MAIN = new Path2D('M3-150Q-34-84-56-24L3-24Z');
+const BOAT_JIB = new Path2D('M9-141L70-13L12-30Q25-84 9-141Z');
+let visitor = null, nextVisit = wanted ? 1.5 : 25 + Math.random() * 35;
+const mist = [];
+function stepVisitor(k) {
+  if (!visitor) {
+    if (t < nextVisit) return;
+    const kind = wanted === 'baleine' || wanted === 'voilier' ? wanted : Math.random() < .5 ? 'baleine' : 'voilier';
+    if (kind === 'baleine' && H - wl < 170) { nextVisit = t + 6; return; }      // pas assez de fond : elle attend
+    visitor = {kind, dir: Math.random() < .5 ? 1 : -1, u: 0, dur: kind === 'baleine' ? 26 : mobile ? 30 : 46, blown: 0, wake: 0};
+    return;
+  }
+  visitor.u += k / 60 / visitor.dur;
+  if (visitor.u >= 1) { visitor = null; nextVisit = t + 70 + Math.random() * 90; }
+}
+function whaleDepth(u, sc) {
+  const room = H - wl, surf = 30 * sc;
+  return lerp(Math.max(Math.min(room * .58, room - 44 * sc), surf), surf, Math.pow(Math.sin(u * Math.PI), 3));
+}
+function drawWhale(k) {
+  const v = visitor, sc = clamp(W / 520, 1.2, 2.8), span = W + 260 * sc;
+  const x = v.dir > 0 ? -130 * sc + span * v.u : W + 130 * sc - span * v.u;
+  const d = whaleDepth(v.u, sc), y = wl + d + Math.sin(t * .8) * 4;
+  const ang = clamp(Math.atan2(whaleDepth(v.u + .004, sc) - d, span * .004), -.4, .4);
+  scares.push({x, y, r: 75 * sc, s: .5, until: t + .05});
+  ctx.save(); ctx.translate(x, y); ctx.scale(v.dir * sc, sc); ctx.rotate(ang);
+  ctx.fillStyle = sun.night > .4 ? 'rgba(6,16,38,.8)' : 'rgba(4,26,48,.56)';
+  ctx.fill(WHALE);
+  if (sun.night > .4) { ctx.lineWidth = 1.2 / sc; ctx.strokeStyle = 'rgba(120,225,255,.3)'; ctx.stroke(WHALE); }
+  ctx.restore();
+  if (Math.sin(v.u * Math.PI) > .985 && v.blown < 1.4) {                         // arrivée en surface : le souffle
+    const bx = x + v.dir * 62 * sc, by = yAt(bx) - 2;
+    if (!v.blown) ripples.push({x: bx, a: 9, t0: t});
+    v.blown += k / 60;
+    for (let i = 0; i < 3; i++) mist.push({x: bx + (Math.random() - .5) * 8, y: by, vx: (Math.random() - .5) * 1.8 * sc * .6 + v.dir * .3, vy: -(3.2 + Math.random() * 3.6) * Math.sqrt(sc), r: 2.5 + Math.random() * 4, life: 1});
+  }
+}
+function drawBoat(k) {
+  const v = visitor, sc = clamp(W / 900, .8, 1.5), span = W + 200 * sc, n = sun.night;
+  const x = v.dir > 0 ? -100 * sc + span * v.u : W + 100 * sc - span * v.u;
+  const slope = Math.atan2(yAt(x + 34) - yAt(x - 34), 68);
+  v.wake += k / 60;
+  if (v.wake > .7 && ripples.length < 10) { v.wake = 0; ripples.push({x: x - v.dir * 58 * sc, a: 2.4, t0: t}); }
+  const low = 1 - clamp(sun.elev / 22, 0, 1);
+  const mix = (a, b, q) => a.map((c, i) => Math.round(lerp(c, b[i], q)));
+  let sail = mix([255, 251, 242], sun.c[2], low * .4); sail = mix(sail, [112, 128, 170], n * .85);
+  const hull = mix([11, 42, 74], [6, 10, 26], n);
+  ctx.save(); ctx.translate(x, yAt(x) - 2 * sc); ctx.rotate(slope * .7); ctx.scale(v.dir * sc, sc); ctx.rotate(.05 + Math.sin(t * .9) * .015);
+  ctx.fillStyle = rgb(hull); ctx.fillRect(3, -153, 2.4, 148);                    // mât
+  ctx.fillStyle = rgb(sail); ctx.fill(BOAT_MAIN);
+  ctx.fillStyle = rgb(mix(sail, hull, .1)); ctx.fill(BOAT_JIB);
+  ctx.fillStyle = '#ff6a4d'; ctx.beginPath(); ctx.moveTo(4, -153); ctx.lineTo(-11, -149); ctx.lineTo(4, -145); ctx.fill();   // flamme
+  ctx.fillStyle = rgb(hull); ctx.fill(BOAT_HULL);
+  ctx.save(); ctx.clip(BOAT_HULL); ctx.fillStyle = '#ff6a4d'; ctx.fillRect(-70, -1.5, 150, 2.6); ctx.restore();              // liston
+  if (n > .4) { ctx.fillStyle = 'rgba(255,214,140,.95)'; ctx.shadowColor = 'rgba(255,200,120,.9)'; ctx.shadowBlur = 12; ctx.beginPath(); ctx.arc(4, -155, 2, 0, TAU); ctx.fill(); ctx.shadowBlur = 0; }
+  ctx.restore();
+}
+
+/* ---------- Lune : sa vraie phase du jour ---------- */
+function moonPhase(d) {                      // 0 = nouvelle lune, .5 = pleine lune
+  const forcedMoon = parseFloat(params.get('lune'));
+  if (!isNaN(forcedMoon)) return forcedMoon;
+  const p = ((d - Date.UTC(2000, 0, 6, 18, 14)) / 864e5 / 29.530588853) % 1;
+  return p < 0 ? p + 1 : p;
+}
+function drawMoon(x, y, r, a) {
+  const ph = sun.moon, c = Math.cos(ph * TAU), waxing = ph < .5, q = Math.PI / 2;
+  ctx.save(); ctx.translate(x, y); ctx.rotate(-.42);
+  ctx.fillStyle = `rgba(70,84,128,${.5 * a})`; ctx.beginPath(); ctx.arc(0, 0, r, 0, TAU); ctx.fill();          // face sombre
+  ctx.beginPath();
+  ctx.arc(0, 0, r, -q, q, !waxing);                                                                            // bord éclairé
+  ctx.ellipse(0, 0, Math.max(r * Math.abs(c), .01), r, 0, q, 3 * q, waxing ? c > 0 : c <= 0);                   // terminateur
+  ctx.fillStyle = `rgba(246,241,226,${a})`; ctx.fill();
+  ctx.restore();
+}
+
 /* ---------- Rendu ---------- */
 function draw(k) {
   const c = sun.c, n = sun.night;
@@ -485,9 +566,10 @@ function draw(k) {
     ctx.globalAlpha = 1;
     const mx = W * (mobile ? .78 : .86), my = wl * .26, mr = mobile ? 15 : 20;
     g = ctx.createRadialGradient(mx, my, mr * .6, mx, my, mr * 6);
-    g.addColorStop(0, `rgba(210,225,255,${.28 * n})`); g.addColorStop(1, 'rgba(210,225,255,0)');
+    const lit = (1 - Math.cos(sun.moon * TAU)) / 2;
+    g.addColorStop(0, `rgba(210,225,255,${.28 * n * (.2 + .8 * lit)})`); g.addColorStop(1, 'rgba(210,225,255,0)');
     ctx.fillStyle = g; ctx.fillRect(mx - mr * 6, my - mr * 6, mr * 12, mr * 12);
-    ctx.fillStyle = `rgba(244,240,226,${n})`; ctx.beginPath(); ctx.arc(mx, my, mr, 0, TAU); ctx.fill();
+    drawMoon(mx, my, mr, n);
   }
 
   // Soleil : il suit l'heure réelle et se couche dans la mer
@@ -503,6 +585,7 @@ function draw(k) {
     ctx.fillStyle = rgb(sc, a); ctx.beginPath(); ctx.arc(sx, sy, sr, 0, TAU); ctx.fill();
   }
 
+  if (visitor && visitor.kind === 'voilier') drawBoat(k);
   drawJumps(k);
 
   // Mer
@@ -527,6 +610,8 @@ function draw(k) {
     }
     ctx.restore();
   }
+
+  if (visitor && visitor.kind === 'baleine') drawWhale(k);
 
   // Plancton en suspension
   ctx.fillStyle = n > .4 ? 'rgba(120,235,255,.5)' : 'rgba(255,255,255,.22)';
@@ -557,6 +642,16 @@ function draw(k) {
   ctx.lineWidth = 1.6;
   ctx.strokeStyle = n > .4 ? `rgba(120,235,255,${.35 + energy * .6})` : `rgba(255,255,255,${.5 + sun.day * .2})`;
   ctx.stroke();
+
+  // Souffle de la baleine
+  if (mist.length) {
+    for (let i = mist.length - 1; i >= 0; i--) {
+      const p = mist[i]; p.life -= k / 60 / 1.7; p.vy = p.vy * Math.pow(.955, k) + .05 * k; p.x += p.vx * k; p.y += p.vy * k; p.r += .16 * k;
+      if (p.life <= 0) { mist.splice(i, 1); continue; }
+      ctx.fillStyle = n > .4 ? `rgba(170,225,255,${p.life * .3})` : `rgba(255,255,255,${p.life * .4})`;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, TAU); ctx.fill();
+    }
+  }
 
   // Gouttes
   if (drops.length) {
@@ -596,7 +691,7 @@ function frame(now) {
   wlV = k ? (wl - prevWl) / k : 0; prevWl = wl;
   energy *= Math.pow(.975, k);
   computeWave();
-  if (k) stepFish(k);
+  if (k) { stepVisitor(k); stepFish(k); }
   else for (let i = 0; i < N; i++) { const top = yAt(fx[i]) + 16; if (fy[i] < top) fy[i] = Math.min(H - 14, top + Math.random() * 40); }
   draw(k);
   layoutDom();
