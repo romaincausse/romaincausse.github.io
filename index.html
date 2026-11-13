@@ -451,7 +451,7 @@ const JUMPERS = {                              // ce qui peut sortir de l'eau au
 };
 const GLYPHS = ['{', '}', ';', '</>', '=>', '0', '1', '()', '[]', '#', '&&', '!='];
 const glyphs = [], ducks = [], notes = [];
-let bug = null, nextBug = 0;
+let bug = null, nextBug = 0, shake = 0;
 function splash(x, strength, code) {
   ripples.push({x, a: 16 * strength, t0: t});
   scares.push({x, y: wl + 40, r: 230, s: 2.2, until: t + .7});
@@ -617,39 +617,118 @@ function whaleDepth(u, sc) {
   const room = H - wl, surf = 30 * sc;
   return lerp(Math.max(Math.min(room * .58, room - 44 * sc), surf), surf, Math.pow(Math.sin(u * Math.PI), 3));
 }
+let crown = null; const lens = [];
+function megaSplash(x, sc, foam) {             // la retombée de la baleine : mur d'eau, vague géante, pluie, poissons projetés
+  const root = Math.sqrt(sc);
+  ripples.push({x, a: 95, t0: t}, {x: x - 190, a: 55, t0: t}, {x: x + 190, a: 55, t0: t});
+  scares.push({x, y: wl + 80, r: 720, s: 4.5, until: t + 1.2});
+  energy = 1; shake = 22;
+  crown = {x, t0: t, w: 250 * sc, h: clamp(wl * .9, 140, 520)};
+  for (let i = 0; i < 280 && drops.length < 900; i++) drops.push({x: x + (Math.random() - .5) * 300 * sc, y: wl - 4, vx: (Math.random() - .5) * 30, vy: -(5 + Math.random() * 17) * root, r: 1.5 + Math.random() * 3.2, life: 1});
+  foam(x, 240, 330 * sc, 12, 12);
+  for (let i = 0; i < 70 && mist.length < 900; i++) mist.push({x: x + (Math.random() - .5) * 300 * sc, y: wl + 20 + Math.random() * 170, vx: (Math.random() - .5) * 1.4, vy: -1 - Math.random() * 2.6, r: 1.5 + Math.random() * 4, gr: .02, life: .9 + Math.random() * .6});
+  for (let i = 0; i < 18; i++) lens.push({x: Math.random() * W, y: Math.random() * H * .8, r: 7 + Math.random() * 22, vy: .15 + Math.random() * .5, life: 1, wait: .25 + Math.random() * .5});   // gouttes sur l'objectif
+  for (let i = 0; i < N; i++) if (!air[i] && Math.abs(fx[i] - x) < 460 && fy[i] < wl + 300) {     // les poissons proches sont projetés en l'air
+    air[i] = 1; fy[i] = yAt(fx[i]) - 4; fvy[i] = -(5 + Math.random() * 9); fvx[i] = (fx[i] - x) / 50 + (Math.random() - .5) * 2;
+  }
+}
+function drawCrown() {                         // la couronne d'eau qui se dresse puis s'effondre
+  const age = t - crown.t0, D = 2;
+  if (age > D) { crown = null; return; }
+  const env = Math.sin(Math.PI * Math.pow(age / D, .5)), fade = Math.min(1, (D - age) / .7);
+  const x0 = crown.x - crown.w, x1 = crown.x + crown.w, c = sun.c[3], seed = crown.t0 * 7;
+  const top = px => {
+    const q = (px - crown.x) / crown.w;
+    return yAt(px) - 3 - crown.h * env * (1 - q * q) * (.4 + .6 * Math.abs(Math.sin(q * 4.2))) * (.8 + .2 * Math.sin(px * .028 + seed)) * (.9 + .1 * Math.sin(px * .07 + age * 6));
+  };
+  ctx.beginPath(); ctx.moveTo(x0, yAt(x0) + 8);
+  let lx = x0, ly = top(x0);
+  for (let px = x0 + 22; px <= x1; px += 22) {               // panaches arrondis : on lisse entre les points
+    const y2 = top(px); ctx.quadraticCurveTo(lx, ly, (lx + px) / 2, (ly + y2) / 2); lx = px; ly = y2;
+  }
+  ctx.lineTo(x1, yAt(x1) + 8);
+  for (let px = x1; px >= x0; px -= 12) ctx.lineTo(px, yAt(px) + 8);
+  ctx.closePath();
+  const g = ctx.createLinearGradient(0, wl - crown.h * env, 0, wl + 8), m = c.map(v => Math.round(lerp(v, 255, .62)));
+  g.addColorStop(0, `rgba(255,255,255,${.92 * fade})`); g.addColorStop(.5, rgb(m, .86 * fade)); g.addColorStop(1, rgb(c, .95 * fade));
+  ctx.fillStyle = g; ctx.fill();
+}
+function drawLens(k) {
+  for (let i = lens.length - 1; i >= 0; i--) {
+    const p = lens[i];
+    if (p.wait > 0) { p.wait -= k / 60; continue; }
+    p.life -= k / 60 / 3.2; p.y += p.vy * k; p.vy += .012 * k;
+    if (p.life <= 0) { lens.splice(i, 1); continue; }
+    const a = Math.min(1, p.life * 2.2), g = ctx.createRadialGradient(p.x - p.r * .3, p.y - p.r * .35, p.r * .1, p.x, p.y, p.r * 1.15);
+    g.addColorStop(0, `rgba(255,255,255,${.55 * a})`); g.addColorStop(.55, `rgba(255,255,255,${.1 * a})`); g.addColorStop(1, `rgba(255,255,255,${.34 * a})`);
+    ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(p.x, p.y, p.r, p.r * 1.22, 0, 0, TAU); ctx.fill();
+  }
+}
+const kf = (b, keys) => {                     // interpolation douce entre des points-clés [instant, valeur]
+  for (let i = 1; i < keys.length; i++) if (b <= keys[i][0]) {
+    const q = (b - keys[i - 1][0]) / (keys[i][0] - keys[i - 1][0]);
+    return lerp(keys[i - 1][1], keys[i][1], q * q * (3 - 2 * q));
+  }
+  return keys[keys.length - 1][1];
+};
+const WHALE_BELLY = new Path2D('M100 5Q72 14 30 15Q-30 15-84 2L-84 30L100 30Z');
+function paintWhale(night) {                   // la baleine en détail, pour la partie hors de l'eau
+  let g = ctx.createLinearGradient(0, -30, 0, 26);
+  g.addColorStop(0, night ? '#0a1730' : '#14354f'); g.addColorStop(1, night ? '#182c50' : '#2b566f');
+  ctx.fillStyle = g; ctx.fill(WHALE);
+  ctx.save(); ctx.clip(WHALE);
+  ctx.fillStyle = night ? 'rgba(150,180,215,.5)' : 'rgba(226,238,242,.8)'; ctx.fill(WHALE_BELLY);                    // ventre clair
+  ctx.strokeStyle = night ? 'rgba(10,23,48,.5)' : 'rgba(20,53,79,.38)'; ctx.lineWidth = .8; ctx.beginPath();          // sillons de la gorge
+  for (let i = 0; i < 5; i++) { ctx.moveTo(96 - i * 3, 9 + i * 2.6); ctx.quadraticCurveTo(50, 17 + i * 2.6, -4 + i * 5, 16 + i * 2.4); }
+  ctx.stroke();
+  ctx.restore();
+  ctx.strokeStyle = night ? 'rgba(6,14,32,.7)' : 'rgba(10,30,48,.6)'; ctx.lineWidth = .9; ctx.beginPath(); ctx.moveTo(99, 5); ctx.quadraticCurveTo(84, 6, 64, 1); ctx.stroke();   // gueule
+  ctx.fillStyle = night ? '#060e20' : '#0a1e30'; ctx.beginPath(); ctx.arc(66, -4, 1.7, 0, TAU); ctx.fill();          // œil
+  if (night) { ctx.lineWidth = .7; ctx.strokeStyle = 'rgba(120,225,255,.45)'; ctx.stroke(WHALE); }
+}
 function drawWhale(k) {
   const v = visitor, sc = clamp(W / 520, 1.2, 2.8), span = W + 260 * sc, night = sun.night > .4;
   const d = whaleDepth(v.u, sc);
   let lift = 0, bAng = 0;
-  if (v.b >= 0) {                              // le grand saut, déclenché au clic
-    v.b += k / 60 / 2.6;
-    const b = Math.min(v.b, 1), sb = Math.sin(b * Math.PI);
-    lift = sb * (d + 80 * sc); bAng = -1.15 * Math.cos(b * Math.PI) * Math.sqrt(sb);
-    v.xoff = v.xbase + 170 * sc * b;
+  if (v.b >= 0) {                              // le grand saut, déclenché au clic : élan, jaillissement, bascule, retombée
+    v.b += k / 60 / 3.7;
+    const b = Math.min(v.b, 1);
+    lift = kf(b, [[0, 0], [.13, -.16], [.4, 1], [.52, .97], [.76, .12], [.88, -.1], [1, 0]]) * (d + 58 * sc);
+    bAng = kf(b, [[0, 0], [.13, -.45], [.3, -1.12], [.5, -1.05], [.72, -.15], [.84, .22], [1, 0]]);
+    v.xoff = v.xbase + 190 * sc * kf(b, [[0, 0], [.14, .03], [.8, .9], [1, 1]]);
     if (b >= 1) { v.b = -1; v.xbase = v.xoff; }
   }
   const x = (v.dir > 0 ? -130 * sc + span * v.u : W + 130 * sc - span * v.u) + v.dir * v.xoff;
   const y = wl + d - lift + Math.sin(t * .8) * 4;
   v.x = x; v.sc = sc;
-  if (v.b >= 0) {
-    if (!v.s1 && v.b > .13) { v.s1 = true; bigSplash(x + v.dir * 50 * sc, 1.3); }
-    if (!v.s2 && v.b > .8) { v.s2 = true; bigSplash(x, 3); }
-  }
   const ang = clamp(Math.atan2(whaleDepth(v.u + .004, sc) - d, span * .004), -.4, .4) + bAng;
+  if (v.b >= 0) {
+    const fxv = v.dir * Math.cos(ang), fyv = Math.sin(ang), root = Math.sqrt(sc);
+    const foam = (px, n, spread, power, r) => { for (let i = 0; i < n && mist.length < 900; i++) mist.push({x: px + (Math.random() - .5) * spread, y: yAt(px) - Math.random() * 10, vx: (Math.random() - .5) * power * .9, vy: -(1.5 + Math.random() * power) * root, r: r * (.4 + Math.random() * .6), gr: .05, life: .75 + Math.random() * .5}); };
+    if (!v.s1 && v.b > .2) {                   // la tête crève la surface
+      v.s1 = true; const hx = x + fxv * 95 * sc;
+      ripples.push({x: hx, a: 20, t0: t}); foam(hx, 40, 90 * sc, 5, 8);
+      for (let i = 0; i < 40; i++) drops.push({x: hx + (Math.random() - .5) * 70 * sc, y: wl - 4, vx: (Math.random() - .5) * 8, vy: -3 - Math.random() * 9, life: 1});
+    }
+    if (v.b > .22 && v.b < .56 && k) for (let i = 0; i < 3; i++) {                // l'eau ruisselle le long du corps
+      const q = (-30 + Math.random() * 130) * sc, px = x + fxv * q, py = y + fyv * q;
+      if (py < yAt(px) - 6 && drops.length < 420) drops.push({x: px, y: py, vx: (Math.random() - .5) * 2, vy: Math.random() * 2, life: 1});
+    }
+    if (!v.s2 && v.b > .77) { v.s2 = true; megaSplash(x + v.dir * 20 * sc, sc, foam); }   // retombée
+  }
   scares.push({x, y, r: 75 * sc, s: .5, until: t + .05});
   const place = () => { ctx.translate(x, y); ctx.scale(v.dir * sc, sc); ctx.rotate(ang); };
   ctx.save(); place();
-  ctx.fillStyle = night ? 'rgba(6,16,38,.8)' : 'rgba(4,26,48,.56)';
-  ctx.fill(WHALE);
+  const g = ctx.createLinearGradient(0, -30, 0, 26);
+  g.addColorStop(0, night ? 'rgba(6,16,38,.85)' : 'rgba(4,26,48,.62)'); g.addColorStop(1, night ? 'rgba(20,40,76,.7)' : 'rgba(20,62,88,.5)');
+  ctx.fillStyle = g; ctx.fill(WHALE);
   if (night) { ctx.lineWidth = 1.2 / sc; ctx.strokeStyle = 'rgba(120,225,255,.3)'; ctx.stroke(WHALE); }
   ctx.restore();
-  if (lift > 0) {                              // la partie hors de l'eau, pleine et nette
+  if (lift > 0) {                              // la partie hors de l'eau, pleine et détaillée
     ctx.save(); ctx.beginPath(); ctx.moveTo(0, -9999); ctx.lineTo(W, -9999);
     for (let i = ys.length - 1; i >= 0; i--) ctx.lineTo(i * STEP, ys[i]);
     ctx.closePath(); ctx.clip(); place();
-    const g = ctx.createLinearGradient(0, -30, 0, 26);
-    g.addColorStop(0, night ? '#0a1730' : '#173c58'); g.addColorStop(1, night ? '#24426e' : '#6c93aa');
-    ctx.fillStyle = g; ctx.fill(WHALE);
+    paintWhale(night);
     ctx.restore();
   }
   if (Math.sin(v.u * Math.PI) > .985 && v.blown < 1.4) {                         // arrivée en surface : le souffle
@@ -807,12 +886,13 @@ function draw(k) {
   ctx.strokeStyle = n > .4 ? `rgba(120,235,255,${.35 + energy * .6})` : `rgba(255,255,255,${.5 + sun.day * .2})`;
   ctx.stroke();
 
+  if (crown) drawCrown();
   drawFloaters(k);
 
   // Souffle de la baleine
   if (mist.length) {
     for (let i = mist.length - 1; i >= 0; i--) {
-      const p = mist[i]; p.life -= k / 60 / 1.7; p.vy = p.vy * Math.pow(.955, k) + .05 * k; p.x += p.vx * k; p.y += p.vy * k; p.r += .16 * k;
+      const p = mist[i]; p.life -= k / 60 / 1.7; p.vy = p.vy * Math.pow(.955, k) + .05 * k; p.x += p.vx * k; p.y += p.vy * k; p.r += (p.gr || .16) * k;
       if (p.life <= 0) { mist.splice(i, 1); continue; }
       ctx.fillStyle = n > .4 ? `rgba(170,225,255,${p.life * .3})` : `rgba(255,255,255,${p.life * .4})`;
       ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, TAU); ctx.fill();
@@ -826,10 +906,11 @@ function draw(k) {
     for (let i = drops.length - 1; i >= 0; i--) {
       const p = drops[i]; p.vy += .32 * k; p.x += p.vx * k; p.y += p.vy * k;
       if (p.y > yAt(p.x) + 2 && p.vy > 0) { drops.splice(i, 1); continue; }
-      ctx.moveTo(p.x + 2, p.y); ctx.arc(p.x, p.y, 2, 0, TAU);
+      const r = p.r || 2; ctx.moveTo(p.x + r, p.y); ctx.arc(p.x, p.y, r, 0, TAU);
     }
     ctx.fill();
   }
+  if (lens.length) drawLens(k);
 }
 
 /* Texte découpé par la houle + bouées posées dessus */
@@ -859,7 +940,10 @@ function frame(now) {
   computeWave();
   if (k) { stepVisitor(k); stepFish(k); }
   else for (let i = 0; i < N; i++) { const top = yAt(fx[i]) + 16; if (fy[i] < top) fy[i] = Math.min(H - 14, top + Math.random() * 40); }
-  draw(k);
+  if (shake > .4) {                            // secousse à la retombée de la baleine
+    ctx.save(); ctx.translate((Math.random() - .5) * shake, (Math.random() - .5) * shake); draw(k); ctx.restore();
+    shake *= Math.pow(.9, k);
+  } else draw(k);
   layoutDom();
   if (!reduced) requestAnimationFrame(frame);
 }
