@@ -1,68 +1,689 @@
-
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="fr">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-  <title>Romain Caussé</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
-  <link rel="stylesheet" type="text/css" href="styles.css" media="screen"/>
-  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.3.1/css/all.css" integrity="sha384-mzrmE5qonljUremFsqc01SB46JvROS7bZs3IO2EmfFsd15uHvIt+Y8vEf7N7fWAU" crossorigin="anonymous">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Romain Caussé</title>
+<meta name="description" content="Romain Caussé : produits logiciels exigeants, IA au service de la qualité et de la sécurité, sobriété technologique. Depuis le sud de la France.">
+<meta property="og:title" content="Romain Caussé">
+<meta property="og:description" content="Produit, qualité, sécurité, IA et sobriété technologique, depuis le sud de la France.">
+<meta name="theme-color" content="#0e7c92">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🐬</text></svg>">
+<style>
+:root{
+  --ink-sky:#06203a;
+  --ink-deep:#f3fbff;
+  --sky-shadow:none;
+  --coral:#ff6a4d;
+  --pill:#06203a;
+  --pill-ink:#fff;
+  --navy:#06203a;
+  --pad:clamp(1.25rem,4.2vw,3.75rem);
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,"URW Palladio L","Book Antiqua",Georgia,serif;
+  --sans:"Avenir Next",Avenir,"Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;overflow:hidden}
+body{
+  background:linear-gradient(#8ec9f3 0 50%,#0e7c92 50% 100%);
+  font-family:var(--sans);
+  font-size:clamp(.95rem,min(1.15vw,2.1vh),1.125rem);
+  line-height:1.5;
+  touch-action:none;
+  overscroll-behavior:none;
+  -webkit-font-smoothing:antialiased;
+}
+canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
+
+/* Deux mondes plein écran, découpés par la ligne d'eau (clip-path piloté en JS) */
+.world{
+  position:fixed;inset:0;
+  display:flex;flex-direction:column;justify-content:space-between;
+  padding:
+    calc(var(--pad) + env(safe-area-inset-top,0px))
+    calc(var(--pad) + env(safe-area-inset-right,0px))
+    calc(var(--pad) + env(safe-area-inset-bottom,0px))
+    calc(var(--pad) + env(safe-area-inset-left,0px));
+  pointer-events:none;
+}
+.world > *{max-width:min(40rem,50vw)}
+.world p{margin:0}
+.sky{padding-bottom:15vh;color:var(--ink-sky);text-shadow:var(--sky-shadow);clip-path:inset(0 0 50% 0)}
+.deep{padding-top:15vh;color:var(--ink-deep);clip-path:inset(50% 0 0 0);text-shadow:0 1px 14px rgba(2,20,40,.45)}
+
+.now{font-size:.95em;opacity:.85;margin-bottom:.9em !important}
+h1{
+  font-family:var(--serif);font-style:italic;font-weight:400;
+  font-size:clamp(2.6rem,min(9vw,12vh),6.25rem);
+  line-height:.92;letter-spacing:-.025em;margin:0 0 .28em -.04em;
+}
+.lead{font-size:1.25em;line-height:1.4;max-width:30ch}
+.sky .more{font-family:var(--serif);font-size:1.3em;line-height:1.45;max-width:34ch}
+
+.craft{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:1.4em 2.2em}
+.craft strong{display:block;font-family:var(--serif);font-style:italic;font-weight:400;font-size:1.45em;line-height:1.15;margin-bottom:.2em}
+.craft span{opacity:.86}
+h2{
+  font-family:var(--serif);font-style:italic;font-weight:400;
+  font-size:clamp(1.7rem,min(4.4vw,6.5vh),3.4rem);
+  line-height:1.02;letter-spacing:-.015em;margin:0 0 .35em;
+}
+.deep .more{max-width:44ch;opacity:.92}
+
+/* Bouées : les deux liens flottent sur la ligne d'eau */
+.buoy{
+  position:fixed;left:0;top:0;
+  display:flex;flex-direction:column;align-items:center;
+  text-decoration:none;color:var(--pill-ink);
+  transform:translate(70vw,50vh) translate(-50%,-100%);
+  transform-origin:50% 100%;
+  will-change:transform;
+  -webkit-tap-highlight-color:transparent;
+}
+.buoy b{
+  font-weight:600;font-size:1rem;letter-spacing:.01em;
+  padding:.5em 1em;border-radius:999px;
+  background:var(--pill);
+  box-shadow:0 6px 18px rgba(3,20,40,.28);
+  transition:background .2s,transform .2s;
+}
+.buoy i{width:2px;height:16px;background:var(--pill)}
+.buoy u{
+  width:40px;height:22px;border-radius:22px 22px 4px 4px;
+  background:linear-gradient(var(--coral) 0 46%,#fff4e6 46% 70%,var(--coral) 70%);
+  box-shadow:inset 0 -3px 0 rgba(0,0,0,.12);
+}
+.buoy:hover b,.buoy:focus-visible b{background:var(--coral);color:#fff;transform:translateY(-3px)}
+.buoy:focus-visible{outline:none}
+.buoy:focus-visible b{outline:3px solid #fff;outline-offset:3px}
+
+.hint{
+  position:fixed;right:calc(var(--pad) + env(safe-area-inset-right,0px));
+  bottom:calc(var(--pad) + env(safe-area-inset-bottom,0px));
+  margin:0;font-size:.85rem;color:#f3fbff;opacity:.75;
+  text-align:right;max-width:16rem;pointer-events:none;
+  transition:opacity .8s;text-shadow:0 1px 10px rgba(2,20,40,.6);
+}
+.hint.gone{opacity:0}
+
+@media (max-width:760px){
+  .world > *{max-width:none}
+  .craft{grid-template-columns:1fr;gap:.7em}
+  .craft strong{font-size:1.2em;display:inline;margin-right:.35em}
+  .craft li{line-height:1.35}
+  .lead{font-size:1.12em}
+  .sky .more{font-size:1.12em}
+  .hint{left:50%;right:auto;transform:translateX(-50%);width:max-content;max-width:calc(100vw - 2.5rem);text-align:center;opacity:1;
+    padding:.6em 1em;border-radius:1.2em;background:rgba(6,32,58,.86);text-shadow:none;line-height:1.35}
+}
+@media (max-height:520px){
+  .craft span{display:none}
+  .sky .more,.deep .more{display:none}
+}
+</style>
 </head>
 <body>
-  <div>
-     <p class="name">Romain <img class="face" src="https://s.gravatar.com/avatar/90bb41d17ca880eea509314cf2704ca2?s=120" alt=""> Caussé</p>
-     <p class="bio-mini"><a href="#">Full Stack Developer</a></p>
-     <p class="code">&lt;code&gt;love&lt;/code&gt;</p>
 
-    <p class="parameters">
-      <span class="email"><i class="fas fa-envelope"></i><span>romain(.)causse(a)gmail(.)com</span></span>
-      <span class="phone"><i class="fas fa-phone"></i><span>+33 684999963</span></span>
-      <span class="location"><i class="fas fa-location-arrow"></i><span>France</span></span>
-      <span class="time"><i class="fas fa-clock"></i><span>Central European Timezone</span></span>
-      <span class="facebook"><i class="fab fa-facebook"></i><span>romain.causse</span></span>
-      <span class="twitter"><i class="fab fa-twitter"></i><span>@romain_causse</span></span>
-      <span class="linkedin"><i class="fab fa-linkedin"></i><span>romain-causse</span></span>
-      <span class="github"><i class="fab fa-github"></i><span>romaincausse</span></span>
-      <span class="skype"><i class="fab fa-skype"></i><span>romain.causse.pro</span></span>
-      <span class="youtube"><i class="fab fa-youtube"></i></i><span>https://www.youtube.com/playlist?list=PL1dE51-y3MKpGr33TMZg8Ww97lhElg2yX</span></span>
-    </p>
+<canvas id="sea" aria-hidden="true"></canvas>
+
+<main>
+  <section class="world sky" id="sky">
+    <div>
+      <p class="now" id="now">Dans le sud de la France, face à la mer.</p>
+      <h1>Romain<br>Caussé</h1>
+      <p class="lead">Je conçois des produits logiciels exigeants, sans rien de superflu.</p>
     </div>
+    <p class="more">Curieux, toujours en mouvement. La mer, les dauphins et les baleines me rappellent chaque jour pourquoi la technologie doit rester sobre.</p>
+  </section>
 
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-<script type="text/javascript">
+  <section class="world deep" id="deep">
+    <ul class="craft">
+      <li><strong>Produit d’abord</strong><span>Un projet réussi se mesure à ce qu’il change pour ceux qui l’utilisent.</span></li>
+      <li><strong>Livrables soignés</strong><span>Exigeant sur la qualité, jusque dans les détails.</span></li>
+      <li><strong>L’IA comme levier</strong><span>Des outils d’IA pour livrer des logiciels plus fiables et plus sûrs.</span></li>
+      <li><strong>Sobriété technologique</strong><span>La juste dose de technologie, pas plus.</span></li>
+    </ul>
+    <div>
+      <h2>Sous la surface,<br>le travail de fond.</h2>
+      <p class="more">Travailleur, orienté produit et projet, je m’adapte à chaque défi technologique. L’IA fait partie de mon quotidien : je m’en sers pour élever la qualité, renforcer la sécurité et mieux livrer.</p>
+    </div>
+  </section>
+</main>
 
-$(document).ready(function() {
-  $('.parameters > span').each(function(i) {
-     $(this).html($(this).html().replace(/\(a\)/g, '@').replace(/\(\.\)/g, '.'));
-  });
+<nav aria-label="Me retrouver">
+  <a class="buoy" href="https://github.com/romaincausse" rel="me noopener"><b>GitHub</b><i></i><u></u></a>
+  <a class="buoy" href="https://www.linkedin.com/in/romain-causse/" rel="me noopener"><b>LinkedIn</b><i></i><u></u></a>
+</nav>
 
-  $('.parameters > span').click(function() {
-    if ($(this).hasClass('held')) {
-      $('.parameters > span').each(function() {
-        $(this).removeClass('hold').removeClass('held');
-      });
-    } else {
-      $('.parameters > span').each(function() {
-        $(this).addClass('hold').removeClass('held');
-      });
-      $(this).addClass('held').removeClass('hold');
-    }
-  });
-});
+<p class="hint" id="hint" aria-hidden="true">Monte ou descends le curseur pour déplacer la mer. Clique pour appeler un dauphin.</p>
 
-</script>
-
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=UA-126372137-1"></script>
 <script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
+(() => {
+'use strict';
+const cv = document.getElementById('sea'), ctx = cv.getContext('2d');
+const skyEl = document.getElementById('sky'), deepEl = document.getElementById('deep');
+const buoys = [...document.querySelectorAll('.buoy')];
+const hint = document.getElementById('hint'), nowEl = document.getElementById('now');
+const root = document.documentElement;
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const coarse = matchMedia('(pointer: coarse)').matches;
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const lerp = (a, b, k) => a + (b - a) * k;
+const TAU = Math.PI * 2;
 
-  gtag('config', 'UA-126372137-1');
+let W = 0, H = 0, dpr = 1, mobile = false;
+let t = 0, last = 0;
+let wlN = .5, targetN = .5, wl = 0;         // ligne d'eau (0..1 puis px)
+let px = -999, py = -999, interacted = false;
+let energy = 0;                              // houle créée par le visiteur
+const STEP = 6; let ys = new Float32Array(1);
+
+/* ---------- Heure solaire du sud de la France ---------- */
+const LAT = 43.5 * Math.PI / 180, LON = 4.0;
+const fmt = new Intl.DateTimeFormat('fr-FR', {hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Europe/Paris'});
+const forced = parseFloat(new URLSearchParams(location.search).get('h'));   // ?h=22 pour prévisualiser une heure
+function currentDate() {
+  const d = new Date();
+  if (isNaN(forced)) return d;
+  const parisH = +fmt.formatToParts(d).find(p => p.type === 'hour').value;
+  const off = ((parisH - d.getUTCHours()) % 24 + 24) % 24;
+  const hh = Math.floor(forced), mm = Math.round((forced - hh) * 60);
+  d.setUTCHours(hh - off, mm, 0, 0);
+  return d;
+}
+const KEYS = [ // élévation du soleil -> couleurs [haut du ciel, milieu, horizon, surface de l'eau, fond]
+  [-18, [5,8,24],    [10,16,46],   [22,32,74],    [8,32,60],    [2,8,20]],
+  [-6,  [22,28,76],  [72,54,112],  [214,112,92],  [18,54,86],   [3,12,28]],
+  [0,   [44,58,122], [168,90,122], [255,152,92],  [22,82,112],  [4,20,40]],
+  [8,   [100,154,216],[160,192,226],[255,218,170],[16,112,136], [4,30,56]],
+  [20,  [70,156,230],[136,200,242],[224,243,252], [14,124,146], [4,34,62]]
+];
+const sun = {elev: 30, ha: 0, night: 0, day: 1, c: KEYS[4].slice(1)};
+function updateSun() {
+  const d = currentDate();
+  const doy = (d - Date.UTC(d.getUTCFullYear(), 0, 0)) / 864e5;
+  const decl = -23.44 * Math.PI / 180 * Math.cos(TAU * (doy + 10) / 365);
+  let ha = (d.getUTCHours() + d.getUTCMinutes() / 60 + LON / 15 - 12) * 15;
+  if (ha > 180) ha -= 360; if (ha < -180) ha += 360;
+  const e = Math.asin(Math.sin(LAT) * Math.sin(decl) + Math.cos(LAT) * Math.cos(decl) * Math.cos(ha * Math.PI / 180)) * 180 / Math.PI;
+  sun.elev = e; sun.ha = ha;
+  sun.night = clamp((-e - 2) / 10, 0, 1);
+  sun.day = clamp((e + 2) / 14, 0, 1);
+  let i = 0; while (i < KEYS.length - 2 && e > KEYS[i + 1][0]) i++;
+  const a = KEYS[i], b = KEYS[i + 1], k = clamp((e - a[0]) / (b[0] - a[0]), 0, 1);
+  sun.c = [1,2,3,4,5].map(n => a[n].map((v, j) => Math.round(lerp(v, b[n][j], k))));
+  const dark = e >= 7;
+  root.style.setProperty('--ink-sky', dark ? '#06203a' : '#fff6ea');
+  root.style.setProperty('--pill', sun.night > .4 ? '#f6efe0' : '#06203a');
+  root.style.setProperty('--pill-ink', sun.night > .4 ? '#06203a' : '#fff');
+  root.style.setProperty('--sky-shadow', dark ? 'none' : '0 1px 16px rgba(10,14,40,.55)');
+  const label = e >= 12 ? 'en plein jour' : e >= 0 ? 'dans une lumière dorée' : e >= -8 ? (ha < 0 ? 'à l’aube' : 'au crépuscule') : 'en pleine nuit';
+  const p = fmt.formatToParts(d), hh = p.find(x => x.type === 'hour').value, mm = p.find(x => x.type === 'minute').value;
+  nowEl.textContent = `Il est ${+hh} h ${mm} dans le sud de la France, ${label}.`;
+  document.querySelector('meta[name=theme-color]').content = rgb(sun.c[0]);
+}
+const rgb = (c, a) => a === undefined ? `rgb(${c[0]},${c[1]},${c[2]})` : `rgba(${c[0]},${c[1]},${c[2]},${a})`;
+
+/* ---------- Silhouettes ---------- */
+const DOLPHIN = new Path2D('M64 3L51-2Q47-9 40-12Q26-19 8-18L4-18Q0-29-13-33Q-8-24-12-16Q-34-11-50-3Q-58-8-71-15Q-64-3-62 2Q-64 8-72 15Q-58 9-50 3Q-30 10-4 12Q0 21-9 27Q8 23 14 12Q34 11 47 7Q56 6 64 3Z');
+const WHALE = new Path2D('M100 4Q99-18 70-25Q20-33-30-22L-35-28L-45-19Q-70-10-84-4Q-92-15-112-19Q-101-5-99 0Q-101 6-112 17Q-92 11-84 4Q-50 22 0 24Q-4 40-24 47Q6 43 18 24Q60 25 86 16Q98 12 100 4Z');
+const ell = (p, cx, cy, rx, ry, rot = 0) => { p.moveTo(cx + rx * Math.cos(rot), cy + rx * Math.sin(rot)); p.ellipse(cx, cy, rx, ry, rot, 0, TAU); p.closePath(); };
+const STAR = new Path2D();
+for (let i = 0; i < 5; i++) {
+  const a0 = -Math.PI / 2 + (i - .5) * TAU / 5, a1 = a0 + TAU / 5, am = (a0 + a1) / 2;
+  if (!i) STAR.moveTo(Math.cos(a0) * 19, Math.sin(a0) * 19);
+  STAR.quadraticCurveTo(Math.cos(am) * 88, Math.sin(am) * 88, Math.cos(a1) * 19, Math.sin(a1) * 19);
+}
+STAR.closePath();
+const HORSE = new Path2D('M-11-20L-25-8L-13 3Z');           // nageoire dorsale
+ell(HORSE, 4, -40, 11, 9); ell(HORSE, 20, -35, 11, 3.6, .22);  // tête, museau
+ell(HORSE, 1, -27, 8, 11); ell(HORSE, -2, -6, 13, 22, .08);    // cou, ventre
+const HORSE_TAIL = new Path2D('M-4 10Q-11 34 1 45Q14 52 15 39Q14 29 5 33');
+const TURTLE = new Path2D('M-32-5L-48 0L-32 5Z');           // queue
+ell(TURTLE, 0, 0, 37, 30); ell(TURTLE, 46, 0, 11, 8.5);        // carapace, tête
+ell(TURTLE, 20, -34, 19, 7.5, -.95); ell(TURTLE, 20, 34, 19, 7.5, .95);
+ell(TURTLE, -34, -24, 11, 5.5, .7); ell(TURTLE, -34, 24, 11, 5.5, -.7);
+const JELLY = new Path2D('M-34 0Q-34-44 0-44Q34-44 34 0Q17 9 0 2Q-17 9-34 0Z');
+const JELLY_ARMS = new Path2D([-24, 0, 24].map(x => `M${x} 4Q${x - 9} 22 ${x} 38Q${x + 9} 54 ${x} 70`).join(''));
+const SHAPES = [
+  {name: 'baleine', path: WHALE, w: 215, h: 78, box: [-114, -34, 216, 82]},
+  {name: 'dauphin', path: DOLPHIN, w: 136, h: 64, box: [-73, -35, 138, 64]},
+  {name: 'etoile', path: STAR, w: 104, h: 104, box: [-52, -52, 104, 104]},
+  {name: 'hippocampe', path: HORSE, stroke: HORSE_TAIL, lw: 9, w: 62, h: 108, box: [-27, -51, 60, 106]},
+  {name: 'tortue', path: TURTLE, w: 106, h: 112, box: [-49, -56, 105, 112]},
+  {name: 'meduse', path: JELLY, stroke: JELLY_ARMS, lw: 5, w: 72, h: 120, box: [-36, -46, 72, 120]}
+];
+const forcedShape = SHAPES.findIndex(sh => sh.name === new URLSearchParams(location.search).get('forme'));   // ?forme=tortue pour en voir une précise
+const probe = document.createElement('canvas').getContext('2d');
+const inside = (sh, x, y) => probe.isPointInPath(sh.path, x, y) || (sh.stroke ? (probe.lineWidth = sh.lw, probe.isPointInStroke(sh.stroke, x, y)) : false);
+function samplePoints(shape, n) {
+  const [bx, by, bw, bh] = shape.box, pts = [];
+  // Répartition régulière : on garde, parmi plusieurs candidats, le point le plus éloigné des autres
+  let guard = 0;
+  while (pts.length < n && guard++ < n * 4) {
+    let best = null, bestD = -1;
+    for (let c = 0; c < 14; c++) {
+      const x = bx + Math.random() * bw, y = by + Math.random() * bh;
+      if (!inside(shape, x, y)) continue;
+      let d = 1e9;
+      for (const q of pts) { const dd = (q[0] - x) ** 2 + (q[1] - y) ** 2; if (dd < d) d = dd; }
+      if (d > bestD) { bestD = d; best = [x, y]; }
+    }
+    if (best) pts.push(best);
+  }
+  while (pts.length < n) pts.push([0, 0]);
+  return pts.sort((a, b) => a[0] - b[0]);
+}
+
+/* ---------- Banc de poissons ---------- */
+let N = 0, fx, fy, fvx, fvy, fa, fs, slot, air, pts = null;
+let wlV = 0, prevWl = 0;                     // vitesse verticale de la ligne d'eau (px par image)
+let mode = 'free', modeT = 0, modeDur = 3.5, shapeIdx = forcedShape > 0 ? forcedShape : 0, shapeDir = 1;
+const scares = [];
+function initFish() {
+  N = mobile ? 85 : 150;
+  fx = new Float32Array(N); fy = new Float32Array(N); fvx = new Float32Array(N); fvy = new Float32Array(N);
+  fa = new Float32Array(N); fs = new Float32Array(N); slot = new Uint16Array(N); air = new Uint8Array(N);
+  for (let i = 0; i < N; i++) {
+    fx[i] = W * (.3 + Math.random() * .5); fy[i] = H * (.62 + Math.random() * .3);
+    const a = Math.random() * TAU; fvx[i] = Math.cos(a) * 1.4; fvy[i] = Math.sin(a) * .6;
+    fa[i] = a; fs[i] = .8 + Math.random() * .6;
+  }
+}
+function startShape() {
+  const sh = SHAPES[shapeIdx];
+  pts = samplePoints(sh, N);
+  shapeDir = Math.random() < .5 ? 1 : -1;
+  const order = [...Array(N).keys()].sort((a, b) => (fx[a] - fx[b]) * shapeDir);
+  order.forEach((fishI, k) => slot[fishI] = k);
+  mode = 'shape'; modeT = 0; modeDur = 6.5;
+}
+function stepFish(k) {
+  modeT += k / 60;
+  if (modeT > modeDur) {
+    if (mode === 'free') startShape();
+    else { mode = 'free'; modeT = 0; modeDur = 8; if (forcedShape < 0) shapeIdx = (shapeIdx + 1 + Math.floor(Math.random() * (SHAPES.length - 1))) % SHAPES.length; }
+  }
+  const room = H - wl;
+  const formed = mode === 'shape' && room > 150;
+  let sc = 1, cx = 0, cy = 0;
+  if (formed) {
+    const sh = SHAPES[shapeIdx];
+    sc = Math.min(W * (mobile ? .8 : .42) / sh.w, (room - 80) / sh.h, 3.2);
+    cx = W * (mobile ? .5 : .68) + Math.sin(t * .3) * 24;
+    cy = wl + room * .5 + Math.sin(t * .5) * 8;
+  }
+  const curX = mobile ? (interacted && px > 0 ? px : W * .5) : Math.max(interacted ? px : 0, W * .58), curY = wl + room * .4;
+  for (let i = scares.length - 1; i >= 0; i--) if (scares[i].until < t) scares.splice(i, 1);
+
+  for (let i = 0; i < N; i++) {
+    let x = fx[i], y = fy[i], vx = fvx[i], vy = fvy[i], ax = 0, ay = 0;
+    if (air[i]) {                              // en plein saut : simple chute libre jusqu'au retour dans l'eau
+      vy += .28 * k; x += vx * k; y += vy * k;
+      if (x < 8 || x > W - 8) { vx = -vx; x = clamp(x, 8, W - 8); }
+      if (vy > 0 && y > yAt(x) + 5) {
+        air[i] = 0; vy *= .4;
+        if (ripples.length < 10) ripples.push({x, a: 3, t0: t});
+        if (drops.length < 260) for (let d = 0; d < 2; d++) drops.push({x, y: y - 6, vx: (Math.random() - .5) * 3, vy: -1.5 - Math.random() * 2.5, life: 1});
+      }
+      fx[i] = x; fy[i] = y; fvx[i] = vx; fvy[i] = vy;
+      let da = Math.atan2(vy, vx) - fa[i]; da = Math.atan2(Math.sin(da), Math.cos(da));
+      fa[i] += da * .3 * k;
+      continue;
+    }
+    if (formed) {
+      const p = pts[slot[i]];
+      const tx = cx + p[0] * sc * shapeDir + Math.sin(t * 1.7 + i) * 1.5;
+      const ty = cy + p[1] * sc + Math.cos(t * 1.3 + i * 2) * 1.5;
+      ax = (clamp((tx - x) * .08, -3.4, 3.4) - vx) * .14;
+      ay = (clamp((ty - y) * .08, -3.4, 3.4) - vy) * .14;
+    } else {
+      let n = 0, mx = 0, my = 0, mvx = 0, mvy = 0, sx = 0, sy = 0;
+      for (let j = 0; j < N; j++) {
+        if (j === i) continue;
+        const dx = fx[j] - x, dy = fy[j] - y, d2 = dx * dx + dy * dy;
+        if (d2 < 4900) {
+          n++; mx += fx[j]; my += fy[j]; mvx += fvx[j]; mvy += fvy[j];
+          if (d2 < 420 && d2 > .01) { sx -= dx / d2; sy -= dy / d2; }
+        }
+      }
+      if (n) {
+        ax += (mx / n - x) * .0009 + (mvx / n - vx) * .045 + sx * 1.3;
+        ay += (my / n - y) * .0009 + (mvy / n - vy) * .045 + sy * 1.3;
+      }
+      ax += (curX - x) * .00016 + (Math.random() - .5) * .08;
+      ay += (curY - y) * .00022 + (Math.random() - .5) * .08;
+      if (x < 70) ax += .08 * (1 - x / 70); else if (x > W - 70) ax -= .08 * (1 - (W - x) / 70);
+    }
+    for (const s of scares) {
+      const dx = x - s.x, dy = y - s.y, d = Math.hypot(dx, dy) || 1;
+      if (d < s.r) { const f = s.s * (1 - d / s.r) / d; ax += dx * f; ay += dy * f; }
+    }
+    const top = yAt(x) + 16, bot = H - 14;
+    if (y < top + 30) ay += .12 * (1 - (y - top) / 30);
+    if (y > bot - 30) ay -= .12 * (1 - (bot - y) / 30);
+    vx += ax * k; vy += ay * k;
+    const sp = Math.hypot(vx, vy) || .001, max = formed ? 3.6 : 2.6, min = formed ? 0 : .7;
+    if (sp > max) { vx *= max / sp; vy *= max / sp; } else if (sp < min) { vx *= min / sp; vy *= min / sp; }
+    x += vx * k; y += vy * k;
+    if (y < top) {
+      if (wlV > .6) {                          // la mer se retire sous eux : ils bondissent hors de l'eau
+        air[i] = 1; y = top - 18;
+        vy = -(2.6 + Math.random() * 3.4 + Math.min(wlV * .35, 3.2));
+        vx = vx * 1.25 + (Math.random() - .5) * 1.6;
+        if (drops.length < 260) drops.push({x, y, vx: (Math.random() - .5) * 2.5, vy: vy * .7, life: 1});
+      } else { y = top; vy = Math.abs(vy) * .4 + .3; }
+    }
+    if (y > bot) { y = bot; vy = -Math.abs(vy) * .4; }
+    fx[i] = x; fy[i] = y; fvx[i] = vx; fvy[i] = vy;
+    const want = sp > .45 ? Math.atan2(vy, vx) : (shapeDir > 0 ? 0 : Math.PI);
+    let da = want - fa[i]; da = Math.atan2(Math.sin(da), Math.cos(da));
+    fa[i] += da * .18 * k;
+  }
+}
+function fishPath(wantAir) {
+  ctx.beginPath();
+  for (let i = 0; i < N; i++) {
+    if (!!air[i] !== wantAir) continue;
+    const L = 11 * fs[i] * (wantAir ? 1.25 : 1), c = Math.cos(fa[i]), s = Math.sin(fa[i]), x = fx[i], y = fy[i];
+    const w = L * .34, wig = Math.sin(t * (wantAir ? 22 : 9) + i * 1.7) * L * .14;
+    const hx = x + c * L * .5, hy = y + s * L * .5, tx = x - c * L * .38, ty = y - s * L * .38;
+    const ex = x - c * L * .72 - s * wig, ey = y - s * L * .72 + c * wig;
+    ctx.moveTo(hx, hy);
+    ctx.quadraticCurveTo(x - s * w, y + c * w, tx, ty);
+    ctx.lineTo(ex - s * w * .8, ey + c * w * .8);
+    ctx.lineTo(ex + s * w * .8, ey - c * w * .8);
+    ctx.lineTo(tx, ty);
+    ctx.quadraticCurveTo(x + s * w, y - c * w, hx, hy);
+  }
+}
+function drawFish() {
+  const n = sun.night, glow = n > .4;
+  if (glow) { ctx.shadowColor = 'rgba(90,220,255,.9)'; ctx.shadowBlur = 8; }
+  fishPath(false);
+  ctx.fillStyle = `rgba(${Math.round(lerp(226, 130, n))},${Math.round(lerp(244, 236, n))},${Math.round(lerp(248, 255, n))},${mobile ? .7 : .85})`;
+  ctx.fill();
+  fishPath(true);                              // hors de l'eau : silhouettes sombres sur le ciel, lumineuses la nuit
+  ctx.fillStyle = glow ? 'rgba(150,240,255,.95)' : sun.elev >= 7 ? 'rgba(18,60,90,.9)' : 'rgba(30,34,70,.9)';
+  ctx.fill();
+  ctx.shadowBlur = 0;
+}
+
+/* ---------- Houle ---------- */
+const ripples = [];
+function computeWave() {
+  const amp = (reduced ? 4 : 5) + energy * 13;
+  for (let i = 0, n = ys.length; i < n; i++) {
+    const x = i * STEP;
+    let y = wl + Math.sin(x * .008 + t * .9) * amp + Math.sin(x * .019 - t * 1.4) * amp * .45 + Math.sin(x * .047 + t * 2.3) * amp * .14;
+    for (const r of ripples) {
+      const age = t - r.t0, d = x - r.x, spread = 40 + age * 260;
+      y += r.a * Math.exp(-age * 1.4) * Math.exp(-(d * d) / (spread * spread)) * Math.cos(Math.abs(d) * .05 - age * 8);
+    }
+    ys[i] = y;
+  }
+  for (let i = ripples.length - 1; i >= 0; i--) if (t - ripples[i].t0 > 4) ripples.splice(i, 1);
+}
+function yAt(x) {
+  const f = clamp(x / STEP, 0, ys.length - 1.001), i = f | 0;
+  return lerp(ys[i], ys[i + 1], f - i);
+}
+
+/* ---------- Dauphin, éclaboussures, plancton ---------- */
+const jumps = [], drops = [], glows = [];
+let stars = [], motes = [];
+function splash(x, strength) {
+  ripples.push({x, a: 16 * strength, t0: t});
+  scares.push({x, y: wl + 40, r: 230, s: 2.2, until: t + .7});
+  const n = reduced ? 0 : 16;
+  for (let i = 0; i < n; i++) drops.push({x: x + (Math.random() - .5) * 26, y: wl - 4, vx: (Math.random() - .5) * 5, vy: -3 - Math.random() * 6 * strength, life: 1});
+}
+function jump(x) {
+  if (jumps.length > 3) return;
+  const dir = Math.random() < .5 ? -1 : 1, d = mobile ? 95 : 175;
+  jumps.push({x0: clamp(x, d + 10, W - d - 10), dir, d, h: clamp(wl * .42, 45, 200), u: 0, out: false});
+  hint.classList.add('gone');
+}
+function drawJumps(k) {
+  for (let i = jumps.length - 1; i >= 0; i--) {
+    const j = jumps[i];
+    if (!j.out) { j.out = true; splash(j.x0 - j.dir * j.d, 1); }
+    j.u += k / 60 / 1.15;
+    if (j.u >= 1) { splash(j.x0 + j.dir * j.d, 1.2); jumps.splice(i, 1); continue; }
+    const u = j.u, x = j.x0 + j.dir * j.d * (2 * u - 1), y = wl - 4 * j.h * u * (1 - u) + 12;
+    const ang = Math.atan2(-4 * j.h * (1 - 2 * u), 2 * j.d);
+    const sc = mobile ? 1.1 : 1.6;
+    ctx.save(); ctx.translate(x, y); ctx.scale(j.dir * sc, sc); ctx.rotate(ang);
+    const g = ctx.createLinearGradient(0, -18, 0, 14);
+    const n = sun.night;
+    g.addColorStop(0, n > .5 ? '#0a1730' : '#1d4460'); g.addColorStop(1, n > .5 ? '#1c3157' : '#7fa6bd');
+    ctx.fillStyle = g; ctx.fill(DOLPHIN);
+    ctx.restore();
+  }
+}
+function initSky() {
+  stars = Array.from({length: mobile ? 70 : 150}, () => ({x: Math.random(), y: Math.random(), r: .4 + Math.random() * 1.1, p: Math.random() * TAU}));
+  motes = Array.from({length: mobile ? 26 : 54}, () => ({x: Math.random(), y: Math.random(), r: .6 + Math.random() * 1.4, p: Math.random() * TAU}));
+}
+
+/* ---------- Rendu ---------- */
+function draw(k) {
+  const c = sun.c, n = sun.night;
+  ctx.clearRect(0, 0, W, H);
+
+  // Ciel
+  let g = ctx.createLinearGradient(0, 0, 0, wl + 20);
+  g.addColorStop(0, rgb(c[0])); g.addColorStop(.62, rgb(c[1])); g.addColorStop(1, rgb(c[2]));
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, Math.min(H, wl + 60));
+
+  if (n > .05) {
+    ctx.fillStyle = '#fff';
+    for (const s of stars) {
+      ctx.globalAlpha = n * (.45 + .45 * Math.sin(t * 1.3 + s.p));
+      ctx.beginPath(); ctx.arc(s.x * W, s.y * wl * .92, s.r, 0, TAU); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    const mx = W * (mobile ? .78 : .86), my = wl * .26, mr = mobile ? 15 : 20;
+    g = ctx.createRadialGradient(mx, my, mr * .6, mx, my, mr * 6);
+    g.addColorStop(0, `rgba(210,225,255,${.28 * n})`); g.addColorStop(1, 'rgba(210,225,255,0)');
+    ctx.fillStyle = g; ctx.fillRect(mx - mr * 6, my - mr * 6, mr * 12, mr * 12);
+    ctx.fillStyle = `rgba(244,240,226,${n})`; ctx.beginPath(); ctx.arc(mx, my, mr, 0, TAU); ctx.fill();
+  }
+
+  // Soleil : il suit l'heure réelle et se couche dans la mer
+  const sx = W * ((mobile ? .7 : .74) + clamp(sun.ha, -115, 115) / (mobile ? 500 : 620));
+  const sy = Math.max(wl * .1, wl - Math.sin(Math.max(sun.elev, -8) * Math.PI / 180) * wl * 1.15);
+  const sr = clamp(W * .034, 24, 52), low = 1 - clamp(sun.elev / 22, 0, 1);
+  const sc = [255, Math.round(lerp(244, 166, low)), Math.round(lerp(214, 96, low))];
+  if (sun.elev > -9) {
+    const a = clamp((sun.elev + 9) / 9, 0, 1);
+    g = ctx.createRadialGradient(sx, sy, sr * .5, sx, sy, sr * 7);
+    g.addColorStop(0, rgb(sc, .6 * a)); g.addColorStop(.35, rgb(sc, .18 * a)); g.addColorStop(1, rgb(sc, 0));
+    ctx.fillStyle = g; ctx.fillRect(sx - sr * 7, sy - sr * 7, sr * 14, sr * 14);
+    ctx.fillStyle = rgb(sc, a); ctx.beginPath(); ctx.arc(sx, sy, sr, 0, TAU); ctx.fill();
+  }
+
+  drawJumps(k);
+
+  // Mer
+  g = ctx.createLinearGradient(0, wl - 10, 0, H);
+  g.addColorStop(0, rgb(c[3])); g.addColorStop(1, rgb(c[4]));
+  ctx.beginPath(); ctx.moveTo(0, H);
+  for (let i = 0; i < ys.length; i++) ctx.lineTo(i * STEP, ys[i]);
+  ctx.lineTo(W, H); ctx.closePath();
+  ctx.fillStyle = g; ctx.fill();
+
+  // Rayons de lumière sous la surface
+  if (sun.day > .05) {
+    ctx.save(); ctx.clip(); ctx.globalCompositeOperation = 'lighter';
+    const slant = -sun.ha / 90 * .55, hh = H - wl;
+    g = ctx.createLinearGradient(0, wl, 0, H);
+    g.addColorStop(0, `rgba(255,250,225,${.06 * sun.day})`); g.addColorStop(.85, 'rgba(255,250,225,0)');
+    ctx.fillStyle = g;
+    for (let i = 0; i < 5; i++) {
+      const x0 = sx + (i - 2) * sr * 2.6 + Math.sin(t * .35 + i * 1.9) * 18, w0 = sr * (.7 + (i % 2) * .5);
+      ctx.beginPath(); ctx.moveTo(x0, wl - 12); ctx.lineTo(x0 + w0, wl - 12);
+      ctx.lineTo(x0 + w0 * 2.6 + slant * hh, H); ctx.lineTo(x0 - w0 * .6 + slant * hh, H); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // Plancton en suspension
+  ctx.fillStyle = n > .4 ? 'rgba(120,235,255,.5)' : 'rgba(255,255,255,.22)';
+  ctx.beginPath();
+  for (const m of motes) {
+    const x = ((m.x * W + t * 6 * m.r) % (W + 20)) - 10, y = m.y * H + Math.sin(t * .6 + m.p) * 10;
+    if (y > yAt(x) + 8) { ctx.moveTo(x + m.r, y); ctx.arc(x, y, m.r, 0, TAU); }
+  }
+  ctx.fill();
+
+  // Bioluminescence : la nuit, le passage du visiteur allume l'eau
+  if (glows.length) {
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = glows.length - 1; i >= 0; i--) {
+      const p = glows[i]; p.life -= k / 60 / 1.6; p.y += .25 * k; p.x += p.vx * k;
+      if (p.life <= 0) { glows.splice(i, 1); continue; }
+      ctx.fillStyle = `rgba(90,225,255,${p.life * .7})`;
+      ctx.beginPath(); ctx.arc(p.x, Math.max(p.y, yAt(p.x) + 3), p.r * (1 + (1 - p.life)), 0, TAU); ctx.fill();
+    }
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  drawFish();
+
+  // Crête
+  ctx.beginPath();
+  for (let i = 0; i < ys.length; i++) i ? ctx.lineTo(i * STEP, ys[i]) : ctx.moveTo(0, ys[0]);
+  ctx.lineWidth = 1.6;
+  ctx.strokeStyle = n > .4 ? `rgba(120,235,255,${.35 + energy * .6})` : `rgba(255,255,255,${.5 + sun.day * .2})`;
+  ctx.stroke();
+
+  // Gouttes
+  if (drops.length) {
+    ctx.fillStyle = n > .4 ? 'rgba(150,240,255,.9)' : 'rgba(255,255,255,.9)';
+    ctx.beginPath();
+    for (let i = drops.length - 1; i >= 0; i--) {
+      const p = drops[i]; p.vy += .32 * k; p.x += p.vx * k; p.y += p.vy * k;
+      if (p.y > yAt(p.x) + 2 && p.vy > 0) { drops.splice(i, 1); continue; }
+      ctx.moveTo(p.x + 2, p.y); ctx.arc(p.x, p.y, 2, 0, TAU);
+    }
+    ctx.fill();
+  }
+}
+
+/* Texte découpé par la houle + bouées posées dessus */
+function layoutDom() {
+  const n = 18, seg = [];
+  for (let i = 0; i <= n; i++) { const x = W * i / n; seg.push([x, yAt(x)]); }
+  const fwd = seg.map(p => `${p[0].toFixed(1)}px ${p[1].toFixed(1)}px`).join(',');
+  const back = seg.slice().reverse().map(p => `${p[0].toFixed(1)}px ${p[1].toFixed(1)}px`).join(',');
+  skyEl.style.clipPath = `polygon(0 0,100% 0,${back})`;
+  deepEl.style.clipPath = `polygon(${fwd},100% 100%,0 100%)`;
+  const xs = mobile ? [.28, .72] : [.64, .84];
+  buoys.forEach((b, i) => {
+    const x = W * xs[i], y = yAt(x), slope = Math.atan2(yAt(x + 14) - yAt(x - 14), 28);
+    b.style.transform = `translate(${x.toFixed(1)}px,${(y + 9).toFixed(1)}px) translate(-50%,-100%) rotate(${(slope * .8).toFixed(3)}rad)`;
+  });
+}
+
+function frame(now) {
+  const dt = Math.min((now - last) / 1000 || 0, .05); last = now;
+  const k = reduced ? 0 : dt * 60;
+  if (!reduced) t += dt;
+  if (!interacted && !reduced) targetN = .5 + Math.sin(t * .45) * .1;   // marée d'accueil tant que personne ne touche
+  wlN += (targetN - wlN) * (reduced ? 1 : 1 - Math.pow(.9, k || 1));
+  wl = wlN * H;
+  wlV = k ? (wl - prevWl) / k : 0; prevWl = wl;
+  energy *= Math.pow(.975, k);
+  computeWave();
+  if (k) stepFish(k);
+  else for (let i = 0; i < N; i++) { const top = yAt(fx[i]) + 16; if (fy[i] < top) fy[i] = Math.min(H - 14, top + Math.random() * 40); }
+  draw(k);
+  layoutDom();
+  if (!reduced) requestAnimationFrame(frame);
+}
+const redraw = () => { if (reduced) frame(performance.now()); };
+
+/* ---------- Interaction ---------- */
+function resize() {
+  dpr = Math.min(window.devicePixelRatio || 1, 2);
+  W = innerWidth; H = innerHeight; mobile = W < 760;
+  cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ys = new Float32Array(Math.ceil(W / STEP) + 2);
+  wl = wlN * H;
+  computeWave(); initSky(); initFish(); redraw();
+}
+function point(e) {
+  const dx = px > -900 ? e.clientX - px : 0, dy = px > -900 ? e.clientY - py : 0;
+  px = e.clientX; py = e.clientY; interacted = true;
+  targetN = clamp(py / H, .1, .9);
+  if (tiltOn) tiltBase = lastTilt - (targetN - .5) * TILT;      // le doigt reprend la main, l'inclinaison repart de là
+  const sp = Math.hypot(dx, dy);
+  energy = Math.min(1, energy + Math.abs(dx) / 500);
+  if (sp > 38) scares.push({x: px, y: wl + 50, r: 190, s: 1.1, until: t + .35});
+  if (sun.night > .4 && sp > 2 && !reduced && glows.length < 220) {
+    for (let i = 0; i < 2; i++) glows.push({x: px + (Math.random() - .5) * 40, y: wl + 4 + Math.random() * 46, vx: (Math.random() - .5) * .5, r: 1 + Math.random() * 2.2, life: 1});
+  }
+  redraw();
+}
+addEventListener('pointermove', point, {passive: true});
+addEventListener('pointerdown', point, {passive: true});
+addEventListener('click', e => { if (!e.target.closest('a')) { jump(e.clientX); redraw(); } });
+addEventListener('keydown', e => {
+  if (e.key === 'ArrowUp' || e.key === 'ArrowDown') { interacted = true; targetN = clamp(targetN + (e.key === 'ArrowUp' ? -.08 : .08), .1, .9); e.preventDefault(); redraw(); }
+  else if ((e.key === ' ' || e.key === 'Enter') && !e.target.closest('a')) { jump(W * (.3 + Math.random() * .4)); e.preventDefault(); redraw(); }
+});
+addEventListener('resize', resize);
+
+/* ---------- Inclinaison du téléphone : pencher vers l'avant fait plonger, vers l'arrière fait remonter ---------- */
+const TILT = 50;                             // 20° d'inclinaison suffisent pour parcourir toute la hauteur
+let tiltBase = null, tiltOn = false, lastTilt = 0, hintTimer = 0;
+function showHint(text, ms) {
+  hint.textContent = text; hint.classList.remove('gone');
+  clearTimeout(hintTimer);
+  if (ms) hintTimer = setTimeout(() => hint.classList.add('gone'), ms);
+}
+function onTilt(e) {
+  if (e.beta == null || e.gamma == null) return;
+  const a = (screen.orientation && screen.orientation.angle) || 0;
+  const v = a === 90 ? -e.gamma : a === 270 ? e.gamma : e.beta;     // en paysage, l'axe avant-arrière change
+  lastTilt = v;
+  if (tiltBase === null) { tiltBase = v; return; }                  // position de départ = façon dont le téléphone est tenu
+  if (!tiltOn) {
+    if (Math.abs(v - tiltBase) < 2.5) return;
+    tiltOn = true; interacted = true;
+    tiltBase = v - (targetN - .5) * TILT;
+    showHint('Penche le téléphone vers l’avant pour plonger, vers l’arrière pour remonter.', 6000);
+  }
+  const raw = .5 + (v - tiltBase) / TILT;
+  if (raw < .1) tiltBase = v + .4 * TILT; else if (raw > .9) tiltBase = v - .4 * TILT;   // en butée, le point de repos suit la main
+  targetN = clamp(raw, .1, .9);
+}
+if (coarse) {
+  const swipe = 'Glisse le doigt vers le haut ou le bas. Touche l’eau pour appeler un dauphin.';
+  showHint(swipe, 7000);
+  if (!reduced && 'DeviceOrientationEvent' in window) {
+    addEventListener('deviceorientation', onTilt);
+    if (typeof DeviceOrientationEvent.requestPermission === 'function') {       // iPhone surtout : l'accès au capteur se demande sur un geste
+      let asked = false;
+      setTimeout(() => { if (tiltBase === null && !asked) showHint('Touche l’écran pour activer l’inclinaison du téléphone.', 0); }, 1200);
+      addEventListener('click', () => {
+        asked = true;
+        const fallback = () => { if (tiltBase === null) showHint(swipe, 7000); };   // refus ou pas de capteur : on reste au doigt
+        DeviceOrientationEvent.requestPermission()
+          .then(r => { if (r === 'granted') { addEventListener('deviceorientation', onTilt); setTimeout(fallback, 1500); } else fallback(); })
+          .catch(fallback);
+      }, {once: true});
+    }
+    addEventListener('orientationchange', () => { tiltBase = null; tiltOn = false; });
+  }
+}
+
+updateSun(); setInterval(() => { updateSun(); redraw(); }, 30000);
+resize();
+if (!reduced) requestAnimationFrame(now => { last = now; requestAnimationFrame(frame); });
+})();
 </script>
-
-
-   
 </body>
 </html>
